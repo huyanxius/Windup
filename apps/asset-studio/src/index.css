@@ -1,0 +1,91 @@
+:root {
+  /* ============================================================
+     Windup — "a precision instrument at dusk"
+     Warm-dusk light surfaces · lantern amber as LIGHT (never fill)
+     · Geist technical type · grain + layered real shadows.
+     ============================================================ */
+
+  /* neutrals — warm dusk, higher contrast than before */
+  --paper: #ebe8e1;
+  --paper-2: #f6f3ee;
+  --ink: #1e1a20;         /* near-black warm iron (>= 4.5:1 on paper) */
+  --muted: #67615a;
+  --faint: #948d84;
+  --line: rgba(30, 24, 30, 0.11);
+  --line-strong: rgba(30, 24, 30, 0.18);
+  --brass: #b8903c;
+
+  /* glass — retuned: lighter blur, real saturate */
+  --glass: rgba(255, 254, 251, 0.72);
+  --glass-solid: rgba(255, 254, 251, 0.92);
+  --glass-blur: saturate(180%) blur(14px);
+
+  /* layered shadow ladder (negative spread → tight-then-soft) */
+  --shadow-1: 0 1px 2px rgba(46, 34, 20, 0.05), 0 1px 1px rgba(46, 34, 20, 0.04);
+  --shadow-2: 0 1px 2px rgba(46, 34, 20, 0.05), 0 4px 8px -2px rgba(46, 34, 20, 0.09),
+    0 8px 16px -4px rgba(46, 34, 20, 0.07);
+  --shadow-node: 0 1px 2px rgba(46, 34, 20, 0.06), 0 8px 18px -6px rgba(46, 34, 20, 0.14);
+  --shadow-panel: 0 1px 2px rgba(46, 34, 20, 0.05), 0 10px 20px -8px rgba(46, 34, 20, 0.12),
+    0 26px 52px -14px rgba(46, 34, 20, 0.16);
+  --shadow-pop: 0 2px 6px rgba(24, 18, 24, 0.1), 0 16px 34px -8px rgba(24, 18, 24, 0.24),
+    0 44px 88px -20px rgba(24, 18, 24, 0.32);
+  --rim: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+
+  /* lantern glow = the ONE accent, used as light */
+  --brand: #f0a52b;
+  --brand-deep: #c9761a;
+  --brand-soft: rgba(240, 165, 43, 0.16);
+  --brand-glow: rgba(240, 165, 43, 0.42);
+  --ok: #3aa06f;
+  --ok-soft: rgba(58, 160, 111, 0.15);
+  --warn: #d9694f;
+
+  --radius: 16px;
+  --radius-sm: 11px;
+  --spring: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* type: Geist (self-hosted) for Latin, PingFang for CJK, Geist Mono for data */
+  --sans: "Geist Variable", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  --mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
+
+  color-scheme: light;
+  font-family: var(--sans);
+  color: var(--ink);
+  font-synthesis-weight: none;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+button { font-family: inherit; cursor: pointer; }
+img { -webkit-user-drag: none; user-select: none; }
+
+/* modern focus — gap ring in brand, keyboard-only */
+:where(button, a, input, textarea, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--paper-2), 0 0 0 4px var(--brand);
+}
+
+/* instrument eyebrow + tabular numerics */
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass);
+  font-weight: 600;
+}
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
