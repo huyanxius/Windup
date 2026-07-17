@@ -1,0 +1,160 @@
+.pl-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: rgba(28, 28, 34, 0.4);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  animation: rv-fade 0.2s var(--spring);
+}
+.pl-panel {
+  width: min(940px, 96vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-solid);
+  border: 1px solid var(--line-strong);
+  border-radius: 20px;
+  box-shadow: 0 30px 80px rgba(20, 20, 40, 0.35);
+  overflow: hidden;
+  animation: rv-rise 0.32s var(--spring);
+}
+.pl-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.pl-kind {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass);
+  font-weight: 600;
+}
+.pl-head h2 {
+  margin: 2px 0 0;
+  font-size: 19px;
+}
+.pl-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 9px;
+  font-size: 20px;
+  color: var(--muted);
+  background: rgba(0, 0, 0, 0.05);
+  line-height: 1;
+}
+.pl-close:hover {
+  background: rgba(0, 0, 0, 0.09);
+}
+
+/* the "game" stage — dusk harbor for the lamplighter */
+.pl-stage {
+  position: relative;
+  height: 360px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #2a2f45 0%, #3b4360 42%, #5b5470 74%, #6d5f5a 100%);
+}
+.pl-ground {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 74px;
+  background: linear-gradient(180deg, #3a3140, #241d24);
+  box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+.pl-lantern {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffd67e;
+  box-shadow: 0 0 26px 12px rgba(240, 165, 43, 0.45);
+}
+.pl-lantern--1 {
+  left: 22%;
+  top: 96px;
+}
+.pl-lantern--2 {
+  left: 72%;
+  top: 74px;
+}
+.pl-char {
+  position: absolute;
+  bottom: 58px;
+  width: 132px;
+  height: 132px;
+  will-change: left, transform;
+  filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.35));
+}
+.pl-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.72);
+  white-space: nowrap;
+}
+.pl-hint kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  font-size: 10.5px;
+  font-family: inherit;
+}
+
+.pl-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 18px;
+  border-top: 1px solid var(--line);
+}
+.pl-foot__spacer {
+  flex: 1;
+}
+.pl-auto {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.pl-auto.on {
+  color: var(--brand-deep);
+}
+.pl-engine {
+  border: none;
+  border-radius: 11px;
+  padding: 11px 18px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #fff;
+  background: linear-gradient(180deg, var(--brand), var(--brand-deep));
+  box-shadow: 0 3px 12px rgba(208, 125, 18, 0.35);
+  transition: transform 0.15s var(--spring), filter 0.15s;
+}
+.pl-engine:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+.pl-done {
+  font-size: 13px;
+  font-weight: 620;
+  color: var(--ok);
+}
