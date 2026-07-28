@@ -1,5 +1,6 @@
 import { useAsync } from '@/shared/hooks'
 import type { AsyncState } from '@/shared/hooks'
+import type { ActionTemplate } from '../action-template'
 import type { Action, Character, CharacterVariant, CreateCharacterInput } from './types'
 
 /** 角色、动作、帧。后端接口未提供，下面的签名即我们提给后端的需求。 */
@@ -35,11 +36,19 @@ export async function confirmBaseImage(_variantId: string): Promise<CharacterVar
   throw new Error('not implemented：等待后端角色造型母版确认接口')
 }
 
+/**
+ * 加动作的入参。写成可辨识联合，是为了让「声明用预设却不给模板 id」在类型上就不成立；
+ * 原先 kind 和可选的 templateId 各写各的，两者可以互相矛盾。
+ *
+ * TODO(待定)：自定义动作的提示词从哪来还没定。一种走法是自定义动作也先落成一份
+ * project 作用域的 ActionTemplate，那样这里就只剩模板 id，kind 可以取消。
+ */
+export type AddActionInput =
+  | { name: string; kind: 'preset'; actionTemplateId: ActionTemplate['id'] }
+  | { name: string; kind: 'custom' }
+
 /** 加一个动作，此时还未生成。 */
-export async function addAction(
-  _variantId: string,
-  _input: { name: string; kind: 'preset' | 'custom'; templateId?: string },
-): Promise<Action> {
+export async function addAction(_variantId: string, _input: AddActionInput): Promise<Action> {
   throw new Error('not implemented：等待后端角色造型动作接口')
 }
 
