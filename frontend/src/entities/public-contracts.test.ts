@@ -4,6 +4,7 @@ import { confirmBaseImage } from './index'
 import type {
   Action,
   ActionTemplate,
+  AddActionInput,
   Character,
   CharacterPerspective,
   CharacterVariant,
@@ -40,6 +41,20 @@ describe('entities 公开契约', () => {
     expectTypeOf<SystemTemplate>().toHaveProperty('projectId').toEqualTypeOf<null>()
     expectTypeOf<ProjectTemplate>().toHaveProperty('projectId').toBeString()
     expectTypeOf<ActionTemplate>().not.toHaveProperty('hasDisplacement')
+  })
+
+  it('动作模板存提示词而不是生成结果', () => {
+    expectTypeOf<ActionTemplate>().toHaveProperty('prompt').toBeString()
+    expectTypeOf<ActionTemplate>().not.toHaveProperty('previewImageUrl')
+  })
+
+  it('预设动作必须指明用哪份模板', () => {
+    type Preset = Extract<AddActionInput, { kind: 'preset' }>
+    type Custom = Extract<AddActionInput, { kind: 'custom' }>
+
+    expectTypeOf<Preset>().toHaveProperty('actionTemplateId').toEqualTypeOf<ActionTemplate['id']>()
+    expectTypeOf<Custom>().not.toHaveProperty('actionTemplateId')
+    expectTypeOf<AddActionInput>().not.toHaveProperty('templateId')
   })
 
   it('异步任务提供可查询和恢复的完整快照', () => {
