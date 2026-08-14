@@ -178,8 +178,8 @@ describe('QuickStartPage', () => {
     expect(
       Boolean(
         starters &&
-          composer &&
-          starters.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING,
+        composer &&
+        starters.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING,
       ),
     ).toBe(true)
   })
@@ -335,9 +335,7 @@ describe('QuickStartPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /16-bit 日式 RPG/u }))
     fireEvent.click(screen.getByRole('button', { name: '生成角色' }))
     await waitFor(() =>
-      expect(service.start).toHaveBeenCalledWith(
-        '16-bit 日式 RPG 像素风，清晰轮廓，明亮配色',
-      ),
+      expect(service.start).toHaveBeenCalledWith('16-bit 日式 RPG 像素风，清晰轮廓，明亮配色'),
     )
     expect(service.open).not.toHaveBeenCalled()
 

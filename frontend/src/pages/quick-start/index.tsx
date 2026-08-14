@@ -307,9 +307,7 @@ function QuickStartInput({
                 onClick={() => setPrompt(stylePrompt.prompt)}
                 className="group grid min-h-16 content-center gap-1 rounded-xl border border-app-line bg-app-surface/70 px-4 py-3 text-left transition duration-200 hover:-translate-y-0.5 hover:border-app-line-strong hover:bg-app-surface-raised hover:shadow-app-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-app-accent motion-reduce:transform-none"
               >
-                <strong className="text-sm font-semibold text-app-ink">
-                  {stylePrompt.title}
-                </strong>
+                <strong className="text-sm font-semibold text-app-ink">{stylePrompt.title}</strong>
                 <span className="text-[11px] text-app-muted">{stylePrompt.detail}</span>
               </button>
             ))}
@@ -319,7 +317,7 @@ function QuickStartInput({
         <div data-layout="quick-start-composer" className="mx-auto w-full max-w-3xl self-end">
           <form
             onSubmit={(event) => void submit(event)}
-            className="grid items-center gap-1.5 rounded-xl border border-app-line-strong bg-app-surface-raised p-1.5 shadow-app-panel transition-shadow focus-within:border-app-accent focus-within:shadow-[0_18px_48px_rgb(29_37_31/14%)] sm:grid-cols-[1fr_auto_auto]"
+            className="grid items-center gap-1.5 rounded-xl border border-app-line-strong bg-app-surface-raised p-1.5 shadow-app-panel transition-shadow focus-within:border-app-accent focus-within:shadow-[var(--shadow-app-composer-focus)] sm:grid-cols-[1fr_auto_auto]"
           >
             <label className="min-w-0" htmlFor="quick-start-prompt">
               <span className="sr-only">创作指令</span>
@@ -330,9 +328,7 @@ function QuickStartInput({
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
                 placeholder={
-                  templateFile
-                    ? '描述动作，可留空生成待机动作…'
-                    : '描述角色的外形、身份和气质…'
+                  templateFile ? '描述动作，可留空生成待机动作…' : '描述角色的外形、身份和气质…'
                 }
                 className="h-10 w-full min-w-0 border-0 bg-transparent px-3 text-[15px] text-app-ink outline-none placeholder:text-app-faint"
               />

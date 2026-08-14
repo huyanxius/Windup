@@ -81,10 +81,7 @@ export function KineticCopyCycle({
 
     let exitTimer: number | null = null
     let swapTimer: number | null = null
-    let restTimer: number | null = window.setTimeout(
-      () => setPhase('resting'),
-      ENTER_DURATION_MS,
-    )
+    let restTimer: number | null = window.setTimeout(() => setPhase('resting'), ENTER_DURATION_MS)
 
     const scheduleExit = (delay: number) => {
       exitTimer = window.setTimeout(() => {
