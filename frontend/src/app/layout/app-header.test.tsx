@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
 
-import type { AuthTokens, UserApis } from '@/entities'
+import type { AuthTokens, CreditAccount, QuotaApis, UserApis } from '@/entities'
 import { AuthSessionProvider } from '@/features/auth-session'
 import { AppHeader } from './app-header'
 
@@ -33,6 +33,27 @@ function createApis(): UserApis & Record<keyof UserApis, ReturnType<typeof vi.fn
   }
 }
 
+const creditAccount: CreditAccount = {
+  id: '11',
+  userId: '7',
+  balance: 90,
+  frozen: 10,
+  totalEarned: 150,
+  totalSpent: 50,
+  createdAt: '2026-08-12T01:02:03Z',
+  updatedAt: '2026-08-17T01:02:03Z',
+}
+
+function createQuotaMock(): QuotaApis & {
+  getBalance: ReturnType<typeof vi.fn>
+  listTransactions: ReturnType<typeof vi.fn>
+} {
+  return {
+    getBalance: vi.fn(async () => creditAccount),
+    listTransactions: vi.fn(async () => ({ items: [], total: 0, page: 1, pageSize: 20 })),
+  }
+}
+
 function LocationProbe() {
   const location = useLocation()
   return (
@@ -40,9 +61,15 @@ function LocationProbe() {
   )
 }
 
-function renderHeader(entry = '/', apis = createApis(), previousEntry?: string) {
+function renderHeader(
+  entry = '/',
+  apis = createApis(),
+  previousEntry?: string,
+  quota = createQuotaMock(),
+) {
   return {
     apis,
+    quota,
     ...render(
       <AuthSessionProvider apis={apis}>
         <MemoryRouter
@@ -54,7 +81,7 @@ function renderHeader(entry = '/', apis = createApis(), previousEntry?: string) 
               path="*"
               element={
                 <>
-                  <AppHeader />
+                  <AppHeader quotaApis={quota} />
                   <LocationProbe />
                 </>
               }
@@ -176,7 +203,7 @@ describe('AppHeader', () => {
   it('为访客提供可发现的登录入口并保留完整站内回跳地址', async () => {
     renderHeader('/quick-start?mode=fast#brief')
 
-    const entry = await screen.findByRole('link', { name: '登录 / 注册' })
+    const entry = await screen.findByRole('link', { name: '登录' })
     expect(entry.getAttribute('href')).toBe(
       '/?account=login&returnTo=%2Fquick-start%3Fmode%3Dfast%23brief',
     )
@@ -192,7 +219,7 @@ describe('AppHeader', () => {
     fireEvent.click(screen.getByRole('button', { name: '退出登录' }))
 
     await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/'))
-    expect(await screen.findByRole('link', { name: '登录 / 注册' })).toBeTruthy()
+    expect(await screen.findByRole('link', { name: '登录' })).toBeTruthy()
     expect(apis.logout).toHaveBeenCalledWith('rotated-refresh-token')
   })
 
@@ -206,7 +233,7 @@ describe('AppHeader', () => {
     fireEvent.click(screen.getByRole('button', { name: '退出登录' }))
 
     await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/'))
-    expect(await screen.findByRole('link', { name: '登录 / 注册' })).toBeTruthy()
+    expect(await screen.findByRole('link', { name: '登录' })).toBeTruthy()
   })
 
   it('没有昵称时使用邮箱展示账号身份', async () => {
@@ -260,6 +287,44 @@ describe('AppHeader', () => {
 
     await waitFor(() => expect(menuSurface.getAttribute('data-state')).toBe('closed'))
     expect(menuSurface.classList.contains('invisible')).toBe(true)
+  })
+
+  it('打开账号菜单时查询并展示最新可用积分', async () => {
+    window.localStorage.setItem('windup.auth.refresh-token', 'stored-refresh-token')
+    let resolveBalance: (account: CreditAccount) => void = () => undefined
+    const quota = createQuotaMock()
+    quota.getBalance.mockReturnValue(
+      new Promise<CreditAccount>((resolve) => {
+        resolveBalance = resolve
+      }),
+    )
+    renderHeader('/workspace', createApis(), undefined, quota)
+
+    fireEvent.click(await screen.findByRole('button', { name: '打开账号菜单' }))
+
+    await waitFor(() => expect(quota.getBalance).toHaveBeenCalledTimes(1))
+    expect(screen.getByText('可用积分')).toBeTruthy()
+    expect(screen.getByText('查询中…')).toBeTruthy()
+
+    resolveBalance(creditAccount)
+    expect(await screen.findByText('90')).toBeTruthy()
+    expect(screen.getByText('积分')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '打开账号菜单' }))
+    expect(screen.getByText('90')).toBeTruthy()
+  })
+
+  it('积分查询失败时保留账号菜单的其他操作', async () => {
+    window.localStorage.setItem('windup.auth.refresh-token', 'stored-refresh-token')
+    const quota = createQuotaMock()
+    quota.getBalance.mockRejectedValue(new Error('积分接口不可用'))
+    renderHeader('/workspace', createApis(), undefined, quota)
+
+    fireEvent.click(await screen.findByRole('button', { name: '打开账号菜单' }))
+
+    expect(await screen.findByText('积分暂不可用')).toBeTruthy()
+    expect(screen.getByRole('link', { name: '打开账号中心' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '退出登录' })).toBeTruthy()
   })
 
   it('使用贴顶毛玻璃栏承载品牌、产品导航与账号入口', async () => {

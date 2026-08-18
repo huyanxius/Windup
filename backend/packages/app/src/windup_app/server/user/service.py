@@ -166,17 +166,10 @@ class SqlAlchemyUserService(UserService):
 
     # -- 注册 ------------------------------------------------------------
 
-    def register_by_email(self, input: RegisterInput) -> LoginResult:
-        # 检查邮箱是否已注册（通过全局 session，这里需要外部传入）
-        # 由于接口签名不含 session，改为类级持有或工厂注入
-        # 但当前项目模式是 service 单例 + session 由调用方传入
-        # 此处需要重构：register 不走 session 查询，直接用内部方法
-        raise NotImplementedError("请通过 API 层调用带 session 的版本")
-
-    def register_by_email_with_session(
+    def register_by_email(
         self, session: Session, input: RegisterInput
     ) -> LoginResult:
-        """邮箱+验证码+密码注册（带 session）。"""
+        """邮箱+验证码+密码注册。"""
         # 校验验证码
         self._verify_code(input.email, input.code, "register")
 
@@ -236,13 +229,10 @@ class SqlAlchemyUserService(UserService):
 
     # -- 登录 ------------------------------------------------------------
 
-    def login_by_password(self, input: LoginByPasswordInput) -> LoginResult:
-        raise NotImplementedError("请通过 API 层调用带 session 的版本")
-
-    def login_by_password_with_session(
+    def login_by_password(
         self, session: Session, input: LoginByPasswordInput
     ) -> LoginResult:
-        """邮箱+密码登录（带 session）。"""
+        """邮箱+密码登录。"""
         # 检查账号锁定
         self._check_login_lock(input.email)
 
@@ -280,6 +270,9 @@ class SqlAlchemyUserService(UserService):
 
     def send_verification_code(self, email: str, purpose: str) -> None:
         """发送邮箱验证码。"""
+        if purpose == "register":
+            raise BizException("内测期间暂不开放注册", code=BizCode.BAD_REQUEST)
+
         # 频率限制
         cooldown_key = VERIFY_COOLDOWN_KEY.format(email=email)
         if self.redis.get(cooldown_key):
@@ -309,31 +302,20 @@ class SqlAlchemyUserService(UserService):
         # 验证通过，删除验证码
         self.redis.delete(code_key)
 
-    def login_by_code(self, input: LoginByCodeInput) -> LoginResult:
-        raise NotImplementedError("请通过 API 层调用带 session 的版本")
-
-    def login_by_code_with_session(
+    def login_by_code(
         self, session: Session, input: LoginByCodeInput
     ) -> LoginResult:
-        """邮箱+验证码登录，无账号自动注册（带 session）。"""
+        """邮箱+验证码登录。内测期间不自动建号。"""
         # 校验验证码
         self._verify_code(input.email, input.code, "login")
 
-        # 查找或创建用户
         user = session.scalar(select(User).where(User.email == input.email))
         if user is None:
-            user = User(email=input.email, email_verified_at=datetime.now(timezone.utc))
-            session.add(user)
-            session.flush()
-            # 自动注册送积分
-            self._create_credit_account(session, user.id)
-            logger.info("[WINDUP] 验证码自动注册 | user_id=%s email=%s", user.id, user.email)
-        else:
-            if user.status == UserStatus.BANNED:
-                raise BizException("账号已被封禁", code=BizCode.BAD_REQUEST)
-            # 标记邮箱已验证
-            if user.email_verified_at is None:
-                user.email_verified_at = datetime.now(timezone.utc)
+            raise BizException("账号不存在", code=BizCode.NOT_FOUND)
+        if user.status == UserStatus.BANNED:
+            raise BizException("账号已被封禁", code=BizCode.BAD_REQUEST)
+        if user.email_verified_at is None:
+            user.email_verified_at = datetime.now(timezone.utc)
 
         user.last_login_at = datetime.now(timezone.utc)
         session.flush()
@@ -443,13 +425,10 @@ class SqlAlchemyUserService(UserService):
 
     # -- 密码 ------------------------------------------------------------
 
-    def change_password(self, user_id: int, input: ChangePasswordInput) -> None:
-        raise NotImplementedError("请通过 API 层调用带 session 的版本")
-
-    def change_password_with_session(
+    def change_password(
         self, session: Session, user_id: int, input: ChangePasswordInput
     ) -> None:
-        """修改密码（带 session）。"""
+        """修改密码。"""
         user = session.get(User, user_id)
         if user is None:
             raise BizException("用户不存在", code=BizCode.NOT_FOUND)
@@ -464,7 +443,7 @@ class SqlAlchemyUserService(UserService):
         self._revoke_all_user_tokens(user_id)
         logger.info("[WINDUP] 密码已修改 | user_id=%s", user_id)
 
-    def reset_password_with_session(
+    def reset_password(
         self, session: Session, input: ResetPasswordInput
     ) -> None:
         """邮箱+验证码重置密码（忘记密码场景）。"""
@@ -487,10 +466,10 @@ class SqlAlchemyUserService(UserService):
 
     # -- 昵称 ------------------------------------------------------------
 
-    def update_nickname_with_session(
+    def update_nickname(
         self, session: Session, user_id: int, input: UpdateNicknameInput
     ) -> UserView:
-        """修改昵称（带 session）。"""
+        """修改昵称。"""
         user = session.get(User, user_id)
         if user is None:
             raise BizException("用户不存在", code=BizCode.NOT_FOUND)
@@ -503,18 +482,11 @@ class SqlAlchemyUserService(UserService):
 
     # -- 查询 ------------------------------------------------------------
 
-    def get_by_id(self, user_id: int) -> UserView | None:
-        # 需要 session，由 API 层直接查 ORM
-        raise NotImplementedError("请通过 API 层直接查询 ORM")
-
-    def get_by_email(self, email: str) -> UserView | None:
-        raise NotImplementedError("请通过 API 层直接查询 ORM")
-
-    def get_by_id_with_session(self, session: Session, user_id: int) -> UserView | None:
+    def get_by_id(self, session: Session, user_id: int) -> UserView | None:
         user = session.get(User, user_id)
         return _to_view(user) if user else None
 
-    def get_by_email_with_session(self, session: Session, email: str) -> UserView | None:
+    def get_by_email(self, session: Session, email: str) -> UserView | None:
         user = session.scalar(select(User).where(User.email == email))
         return _to_view(user) if user else None
 
