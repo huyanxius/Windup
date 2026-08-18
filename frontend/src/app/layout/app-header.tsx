@@ -120,7 +120,6 @@ export function AppHeader({ quotaApis = defaultQuotaApis }: AppHeaderProps = {})
   }, [pathname, session.state.status])
 
   function signOut() {
-    window.sessionStorage.removeItem(inviteHintStorageKey)
     const returnHome = () => navigate('/', { replace: true })
     void session.logout().then(returnHome, returnHome)
   }

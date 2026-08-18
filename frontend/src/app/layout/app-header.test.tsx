@@ -283,6 +283,30 @@ describe('AppHeader', () => {
     expect(await screen.findByRole('link', { name: '登录' })).toBeTruthy()
   })
 
+  it('会话存储清理失败时仍通过共享会话边界退出', async () => {
+    window.localStorage.setItem('windup.auth.refresh-token', 'stored-refresh-token')
+    window.sessionStorage.setItem('windup.auth-session.invite-hint-seen.v1', '1')
+    const apis = createApis()
+    renderHeader('/projects', apis)
+    const originalRemoveItem = Storage.prototype.removeItem
+    const removeItem = vi
+      .spyOn(Storage.prototype, 'removeItem')
+      .mockImplementation(function (this: Storage, key) {
+        if (this === window.sessionStorage) {
+          throw new DOMException('Storage is disabled', 'SecurityError')
+        }
+        originalRemoveItem.call(this, key)
+      })
+
+    fireEvent.click(await screen.findByRole('button', { name: '打开账号菜单' }))
+    fireEvent.click(screen.getByRole('button', { name: '退出登录' }))
+
+    await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/'))
+    expect(await screen.findByRole('link', { name: '登录' })).toBeTruthy()
+    expect(apis.logout).toHaveBeenCalledWith('rotated-refresh-token')
+    removeItem.mockRestore()
+  })
+
   it('没有昵称时使用邮箱展示账号身份', async () => {
     window.localStorage.setItem('windup.auth.refresh-token', 'stored-refresh-token')
     const apis = createApis()
