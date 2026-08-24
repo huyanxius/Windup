@@ -267,25 +267,34 @@ function readAgentConversation(
 function createAgentSeed(turns: readonly AgentConversationTurn[]): {
   messages: readonly PlannerMessage[]
   clarificationUsed: boolean
-  pendingProposal: CharacterGenerationProposal | null
+  restorableProposal: CharacterGenerationProposal | null
+  restoredPrompt: string
 } {
-  const pending = turns.findLast(
+  const restorable = turns.findLast(
     (turn) =>
-      turn.role === 'assistant' && turn.kind === 'proposal' && turn.proposalStatus === 'pending',
+      turn.role === 'assistant' &&
+      turn.kind === 'proposal' &&
+      (turn.proposalStatus === 'pending' || turn.proposalStatus === 'adopted'),
   )
   return {
     messages: turns.map(({ role, content }) => ({ role, content })),
     clarificationUsed: turns.some(
       (turn) => turn.role === 'assistant' && turn.kind === 'clarification',
     ),
-    pendingProposal:
-      pending?.role === 'assistant' && pending.kind === 'proposal'
+    restorableProposal:
+      restorable?.role === 'assistant' && restorable.kind === 'proposal'
         ? {
-            proposalId: pending.proposalId,
-            optimizedPrompt: pending.optimizedPrompt,
-            optimizationSummary: pending.optimizationSummary,
+            proposalId: restorable.proposalId,
+            optimizedPrompt: restorable.optimizedPrompt,
+            optimizationSummary: restorable.optimizationSummary,
           }
         : null,
+    restoredPrompt:
+      restorable?.role === 'assistant' &&
+      restorable.kind === 'proposal' &&
+      restorable.proposalStatus === 'adopted'
+        ? restorable.optimizedPrompt
+        : '',
   }
 }
 
@@ -505,14 +514,6 @@ function QuickStartInput({
   onSessionCreated: (session: QuickStartSession) => void
 }) {
   const navigate = useNavigate()
-  const [prompt, setPrompt] = useState('')
-  const [templateFile, setTemplateFile] = useState<File | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [entryTransition, setEntryTransition] = useState<'idle' | 'leaving'>('idle')
-  const [promptState, setPromptState] = useState<
-    'collecting' | 'rewriting' | 'ready' | 'confirmed'
-  >('collecting')
-  const [error, setError] = useState<string | null>(null)
   const draftIdRef = useRef(readAgentDraftId())
   const [conversationTurns, setConversationTurns] = useState<readonly AgentConversationTurn[]>(
     () => {
@@ -525,19 +526,27 @@ function QuickStartInput({
         : []
     },
   )
+  const initialConversationLength = useRef(conversationTurns.length)
+  const initialAgentSeed = useRef(createAgentSeed(conversationTurns)).current
+  const [prompt, setPrompt] = useState(initialAgentSeed.restoredPrompt)
+  const [templateFile, setTemplateFile] = useState<File | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [entryTransition, setEntryTransition] = useState<'idle' | 'leaving'>('idle')
+  const [promptState, setPromptState] = useState<
+    'collecting' | 'rewriting' | 'ready' | 'confirmed'
+  >(initialAgentSeed.restoredPrompt ? 'ready' : 'collecting')
+  const [error, setError] = useState<string | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   const promptInput = useRef<HTMLTextAreaElement>(null)
   const submitAbortController = useRef<AbortController | null>(null)
   const handoffTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const rewriteTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const conversationTurnsRef = useRef(conversationTurns)
-  const initialConversationLength = useRef(conversationTurns.length)
-  const initialAgentSeed = useRef(createAgentSeed(conversationTurns)).current
   const agentSession = useQuickStartAgent({
     ...agent,
     initialMessages: initialAgentSeed.messages,
     initialClarificationUsed: initialAgentSeed.clarificationUsed,
-    initialProposal: initialAgentSeed.pendingProposal,
+    initialProposal: initialAgentSeed.restorableProposal,
   })
   const unavailableReason = service.unavailableReason
   const agentPlanning = agentSession.state.status === 'planning'
@@ -623,10 +632,11 @@ function QuickStartInput({
       turn.role === 'assistant' && turn.kind === 'proposal' && turn.proposalId === proposalId
         ? {
             ...turn,
-            content: confirmedPrompt
-              ? `${turn.optimizationSummary}\n\n提示词提案：${confirmedPrompt}`
-              : turn.content,
-            optimizedPrompt: confirmedPrompt ?? turn.optimizedPrompt,
+            content:
+              confirmedPrompt !== undefined
+                ? `${turn.optimizationSummary}\n\n提示词提案：${confirmedPrompt}`
+                : turn.content,
+            optimizedPrompt: confirmedPrompt !== undefined ? confirmedPrompt : turn.optimizedPrompt,
             proposalStatus,
           }
         : turn,
@@ -842,7 +852,7 @@ function QuickStartInput({
                       prompt={turn.optimizedPrompt}
                       status={turn.proposalStatus}
                       disabled={
-                        turn.proposalStatus !== 'pending' ||
+                        (turn.proposalStatus !== 'pending' && turn.proposalStatus !== 'adopted') ||
                         agentSession.state.status !== 'proposal' ||
                         agentSession.state.proposalId !== turn.proposalId ||
                         promptState === 'rewriting' ||
@@ -955,7 +965,17 @@ function QuickStartInput({
                 rows={1}
                 aria-label="创作指令"
                 value={prompt}
-                onChange={(event) => setPrompt(event.target.value)}
+                onChange={(event) => {
+                  const nextPrompt = event.target.value
+                  setPrompt(nextPrompt)
+                  if (agentSession.state.status === 'proposal' && promptState === 'ready') {
+                    updateProposalStatus(
+                      agentSession.state.proposalId,
+                      'adopted',
+                      nextPrompt.trim() ? nextPrompt : undefined,
+                    )
+                  }
+                }}
                 disabled={inputLocked}
                 placeholder={
                   agentPlanning

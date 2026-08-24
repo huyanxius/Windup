@@ -742,7 +742,7 @@ describe('QuickStartPage', () => {
     const service = serviceFor(null)
     const startCharacterGeneration = vi.fn(() => new Promise<{ runId: string }>(() => undefined))
     const agent = agentFor({ startCharacterGeneration })
-    renderAt('/quick-start', service, agent)
+    const initialView = renderAt('/quick-start', service, agent)
 
     fireEvent.change(screen.getByRole('textbox', { name: '创作指令' }), {
       target: { value: '云端工坊的银发机械师' },
@@ -791,6 +791,12 @@ describe('QuickStartPage', () => {
     fireEvent.change(input, { target: { value: '云端工坊的银发机械师，佩戴黄铜护目镜' } })
     expect(screen.getByRole('button', { name: '发送生成' })).toBeTruthy()
     expect(startCharacterGeneration).not.toHaveBeenCalled()
+
+    initialView.unmount()
+    renderAt('/quick-start', service, agent)
+    const restoredInput = screen.getByRole('textbox', { name: '创作指令' }) as HTMLTextAreaElement
+    expect(restoredInput.value).toBe('云端工坊的银发机械师，佩戴黄铜护目镜')
+    expect(screen.getByRole('button', { name: '发送生成' })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: '发送生成' }))
     await act(async () => undefined)
