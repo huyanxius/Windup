@@ -57,15 +57,15 @@ describe('CharacterDetailPage', () => {
     const assetActions = screen.getByRole('group', { name: '角色资产操作' })
     const exportEntry = within(assetActions).getByRole('button', { name: '导出资产包' })
     expect(exportEntry.className).toContain('rounded-full')
-    const pixelPerfectEntry = within(assetActions).getByRole('button', { name: '完美像素化' })
     const playtestEntry = within(assetActions).getByRole('link', {
       name: '在预览台打开当前造型',
     })
-    for (const action of [exportEntry, pixelPerfectEntry, playtestEntry]) {
+    for (const action of [exportEntry, playtestEntry]) {
       expect(action.querySelector('svg')).toBeTruthy()
       expect(action.className).toContain('min-h-10')
       expect(action.className).toContain('rounded-full')
     }
+    expect(within(assetActions).queryByRole('button', { name: '完美像素化' })).toBeNull()
     expect(screen.queryByRole('button', { name: '完美像素画' })).toBeNull()
     expect(screen.queryByText('当前阶段')).toBeNull()
     expect(screen.queryByRole('heading', { name: '动作与帧' })).toBeNull()
