@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { DownloadSimple, Graph, GridFour, Lightning, Play, Plus, X } from '@phosphor-icons/react'
+import { DownloadSimple, Graph, Lightning, Play, Plus, X } from '@phosphor-icons/react'
 import { Link, useOutletContext, useParams } from 'react-router'
 
 import {
@@ -11,7 +11,6 @@ import {
   type Project,
 } from '@/entities'
 import { createCharacterExportModel, ExportButton } from '@/features/export-package'
-import { PixelPerfectWorkbench } from '@/features/pixel-perfect'
 
 const ACTION_TYPE_LABELS: Record<string, string> = {
   walk: '行走',
@@ -40,7 +39,6 @@ export function CharacterDetailPage() {
   const project = useOutletContext<Project>()
   const [character, setCharacter] = useState<Character | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [pixelPerfectOpen, setPixelPerfectOpen] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -53,7 +51,6 @@ export function CharacterDetailPage() {
 
     setCharacter(null)
     setError(null)
-    setPixelPerfectOpen(false)
     void characterApis.get(characterId).then(
       (nextCharacter) => {
         if (!active) return
@@ -127,18 +124,6 @@ export function CharacterDetailPage() {
               <CharacterExport project={project} character={character} outfit={selectedOutfit} />
             ) : null}
             {selectedOutfit && canPlaytest ? (
-              <button
-                type="button"
-                aria-expanded={pixelPerfectOpen}
-                aria-controls="pixel-perfect-workbench"
-                onClick={() => setPixelPerfectOpen((current) => !current)}
-                className={ASSET_ACTION_SECONDARY}
-              >
-                <GridFour size={15} weight="bold" aria-hidden="true" />
-                完美像素化
-              </button>
-            ) : null}
-            {selectedOutfit && canPlaytest ? (
               <Link
                 to={`/playtest/${character.id}/${selectedOutfit.id}`}
                 aria-label="在预览台打开当前造型"
@@ -157,12 +142,7 @@ export function CharacterDetailPage() {
           <h3 className="font-semibold text-app-ink">这个角色还没有造型</h3>
         </div>
       ) : (
-        <>
-          {pixelPerfectOpen ? (
-            <PixelPerfectWorkbench id="pixel-perfect-workbench" actions={selectedOutfit.actions} />
-          ) : null}
-          <ActionList key={selectedOutfit.id} character={character} outfit={selectedOutfit} />
-        </>
+        <ActionList key={selectedOutfit.id} character={character} outfit={selectedOutfit} />
       )}
     </section>
   )
