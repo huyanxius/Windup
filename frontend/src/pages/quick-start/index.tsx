@@ -1423,7 +1423,7 @@ function QuickStartInput({
                       </div>
                     ) : null}
                   </div>
-                  <div className="relative">
+                  <div className="relative order-first">
                     <button
                       type="button"
                       aria-label={`选择项目，当前${selectedProject?.name ?? '自动创建'}`}
